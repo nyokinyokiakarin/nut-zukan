@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#f6dc58">
+<title>ぬい図鑑</title>
+<style>
+:root{--paper:#fffdf4;--ink:#29281f;--muted:#777466;--line:#d8d1ae;--yellow:#f6dc58;--green:#a8c96b;--soft:#f7f0cf;--white:#fff}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif}
+.wrap{max-width:980px;margin:auto;padding:18px 14px 70px}header{padding:12px 0 16px;border-bottom:1px solid var(--line)}
+h1{font-size:28px;margin:0}.sub{font-size:13px;color:var(--muted);margin-top:4px}.toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-top:13px}
+button,.fileBtn{appearance:none;border:1px solid #a49b70;background:#fff;color:var(--ink);border-radius:999px;padding:9px 13px;font:inherit;font-weight:700}.fileBtn input{display:none}
+.notice{background:var(--soft);border:1px solid var(--line);padding:12px 14px;border-radius:15px;margin:14px 0;font-size:13px;line-height:1.55}
+.summary{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}.pill{appearance:none;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:999px;padding:6px 10px;font:inherit;font-size:12px;font-weight:700;cursor:pointer}.pill[aria-pressed="true"]{background:var(--yellow);border-color:#a49b70}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:14px}.card{border:1px solid var(--line);border-radius:19px;background:#fff;overflow:hidden;box-shadow:0 4px 14px rgba(65,58,29,.06)}
+.photo{aspect-ratio:1/1;background:#eee9d7;display:grid;place-items:center;overflow:hidden;position:relative}.photo img{width:100%;height:100%;object-fit:cover}.placeholder{text-align:center;color:#777466;font-weight:800;line-height:1.5}.no{font-size:11px;position:absolute;left:10px;top:10px;background:#fff9ddee;border:1px solid #ead37b;border-radius:999px;padding:4px 8px}
+.body{padding:13px}.name{font-size:19px;font-weight:800}.character{font-size:12px;color:var(--muted);margin-top:2px}.facts{display:grid;grid-template-columns:72px 1fr;gap:5px;margin-top:10px;font-size:12px}.facts b{color:var(--muted);font-weight:600}.memo{white-space:pre-wrap;font-size:12px;line-height:1.55;margin-top:9px;padding-top:9px;border-top:1px dashed var(--line)}
+.photoBtn{display:block;text-align:center;margin-top:11px;background:var(--yellow);border:1px solid #a49b70;border-radius:999px;padding:9px;font-weight:800;cursor:pointer}.photoBtn input{display:none}
+.tiny{font-size:11px;color:var(--muted);line-height:1.5;margin-top:16px}
+@media(max-width:600px){.grid{grid-template-columns:1fr 1fr;gap:10px}.body{padding:10px}.name{font-size:16px}.facts{grid-template-columns:1fr;gap:1px}.facts b{margin-top:4px}}
+@media(max-width:390px){.grid{grid-template-columns:1fr}}
+
+/* 表示切り替え：通常は詳細カード、一覧モードでは写真＋名前だけ */
+.viewSwitch{display:flex;gap:6px;align-items:center;margin-top:10px}
+.viewSwitch button{padding:8px 12px}
+.viewSwitch button[aria-pressed="true"]{background:var(--yellow);border-color:#a49b70}
+body.compact .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+body.compact .card{border-radius:15px}
+body.compact .card .no,body.compact .card .character,body.compact .card .facts,body.compact .card .memo,body.compact .card .photoBtn{display:none}
+body.compact .card .body{padding:8px 5px 10px;text-align:center}
+body.compact .card .name{font-size:13px;line-height:1.35}
+body.compact .card .photo{aspect-ratio:1/1}
+body.compact .card .placeholder{font-size:11px;line-height:1.35;padding:4px}
+body.compact .card .placeholder small{display:none}
+@media(max-width:600px){body.compact .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}body.compact .card .name{font-size:12px}}
+@media(max-width:390px){body.compact .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}body.compact .card .body{padding:7px 3px 8px}body.compact .card .name{font-size:11px}}
+
+/* iPhoneのファイルプレビューでも動く、CSSだけの表示切替・絞り込み */
+.controlRadio{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.switchLabel,.filterLabel{display:inline-block;appearance:none;border:1px solid #a49b70;background:#fff;color:var(--ink);border-radius:999px;padding:9px 13px;font:inherit;font-weight:700;cursor:pointer}
+.filterLabel{border-color:var(--line);padding:6px 10px;font-size:12px}
+#view-detail:checked ~ header .label-detail,#view-compact:checked ~ header .label-compact{background:var(--yellow);border-color:#a49b70}
+#view-compact:checked ~ #grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+#view-compact:checked ~ #grid .card{border-radius:15px}
+#view-compact:checked ~ #grid .card .no,#view-compact:checked ~ #grid .card .character,#view-compact:checked ~ #grid .card .facts,#view-compact:checked ~ #grid .card .memo,#view-compact:checked ~ #grid .card .photoBtn{display:none}
+#view-compact:checked ~ #grid .card .body{padding:8px 5px 10px;text-align:center}
+#view-compact:checked ~ #grid .card .name{font-size:13px;line-height:1.35}
+#view-compact:checked ~ #grid .card .photo{aspect-ratio:1/1}
+#view-compact:checked ~ #grid .card .placeholder{font-size:11px;line-height:1.35;padding:4px}
+#view-compact:checked ~ #grid .card .placeholder small{display:none}
+#filter-all:checked ~ #summary .label-all,#filter-photo:checked ~ #summary .label-photo,#filter-dice:checked ~ #summary .label-dice,#filter-ramuda:checked ~ #summary .label-ramuda,#filter-gentaro:checked ~ #summary .label-gentaro,#filter-chuohku:checked ~ #summary .label-chuohku{background:var(--yellow);border-color:#a49b70}
+#filter-photo:checked ~ #grid .card:not(.has-photo){display:none}
+#filter-dice:checked ~ #grid .card:not(.cat-dice){display:none}
+#filter-ramuda:checked ~ #grid .card:not(.cat-ramuda){display:none}
+#filter-gentaro:checked ~ #grid .card:not(.cat-gentaro){display:none}
+#filter-chuohku:checked ~ #grid .card:not(.cat-chuohku){display:none}
+@media(max-width:600px){#view-compact:checked ~ #grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}#view-compact:checked ~ #grid .card .name{font-size:12px}}
+@media(max-width:390px){#view-compact:checked ~ #grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}#view-compact:checked ~ #grid .card .body{padding:7px 3px 8px}#view-compact:checked ~ #grid .card .name{font-size:11px}}
+</style></head>
+<body><div class="wrap">
+<input class="controlRadio" type="radio" name="viewmode" id="view-detail" checked><input class="controlRadio" type="radio" name="viewmode" id="view-compact">
+<input class="controlRadio" type="radio" name="filtermode" id="filter-all" checked><input class="controlRadio" type="radio" name="filtermode" id="filter-photo"><input class="controlRadio" type="radio" name="filtermode" id="filter-dice"><input class="controlRadio" type="radio" name="filtermode" id="filter-ramuda"><input class="controlRadio" type="radio" name="filtermode" id="filter-gentaro"><input class="controlRadio" type="radio" name="filtermode" id="filter-chuohku">
+
+<header><h1>ぬい図鑑</h1><div class="sub">情報は登録済み、あとは写真を入れるだけ。</div>
+<div class="toolbar"><button id="exportBtn" type="button">写真データをバックアップ</button><label class="fileBtn">バックアップを復元<input id="importFile" type="file" accept="application/json,.json"></label></div><div class="viewSwitch" aria-label="表示方法"><label class="switchLabel label-detail" for="view-detail">くわしく</label><label class="switchLabel label-compact" for="view-compact">写真一覧</label></div></header>
+<div class="notice">名前・種類・お迎え日・性格・話し方などは最初から入れてあるぞ。各カードの「写真を入れる」を押して、その子の写真を選べば完成！ 写真は対応ブラウザではこの端末内に保存されます。</div>
+<div id="summary" class="summary"><label class="filterLabel label-all" for="filter-all">登録 20人</label><label class="filterLabel label-photo" for="filter-photo"><span id="photoCountStatic">写真 0 / 20</span></label><label class="filterLabel label-dice" for="filter-dice">帝統 7人</label><label class="filterLabel label-ramuda" for="filter-ramuda">乱数 5人</label><label class="filterLabel label-gentaro" for="filter-gentaro">幻太郎 5人</label><label class="filterLabel label-chuohku" for="filter-chuohku">中王区 3人</label></div><div id="grid" class="grid"><article class="card cat-dice"><div class="photo"><span class="no">No. 001</span><div class="placeholder">有栖川帝統<br>長男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 長男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>ピコぬい</span><b>お迎え日</b><span>2025.03.12</span><b>お迎え場所</b><span>109シネマズ川崎（ラゾーナ川崎）・UFOキャッチャー</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。好奇心旺盛。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">帝統ぬい兄弟の長男。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 002</span><div class="placeholder">有栖川帝統<br>次男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 次男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>おすわりぬい</span><b>お迎え日</b><span>2025.03.12</span><b>お迎え場所</b><span>109シネマズ川崎（ラゾーナ川崎）・UFOキャッチャー</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。しっかりもの。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">長男と同日お迎え。長男のあとにお迎え。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 003</span><div class="placeholder">有栖川帝統<br>三男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 三男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2025.03.14</span><b>お迎え場所</b><span>横浜ビブレ namco</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。兄弟の中でも特に食いしん坊。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">乙統女さまと同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-chuohku"><div class="photo"><span class="no">No. 004</span><div class="placeholder">東方天乙統女<br>乙統女さま<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乙統女さま</div><div class="character">東方天乙統女</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2025.03.14</span><b>お迎え場所</b><span>横浜ビブレ namco</span><b>性格</b><span>紅茶が好き。冷静。</span><b>話し方</b><span>一人称は「わたくし」。上品で落ち着いた敬語に「ぬ」がつく。</span></div><div class="memo">帝統三男と同日お迎え。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-ramuda"><div class="photo"><span class="no">No. 005</span><div class="placeholder">飴村乱数<br>長男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乱数ぬい 長男</div><div class="character">飴村乱数</div><div class="facts"><b>シリーズ</b><span>ピコぬい</span><b>お迎え日</b><span>2025.04.22</span><b>お迎え場所</b><span>109シネマズ川崎（ラゾーナ川崎）</span><b>性格</b><span>甘いもの・かわいいもの・おしゃれが好き。むずかしいことはいっさい考えてない。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。明るくやわらかい。</span></div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 006</span><div class="placeholder">有栖川帝統<br>四男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 四男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>アニメ版ちびぐるみ</span><b>お迎え日</b><span>2025.05.26</span><b>お迎え場所</b><span>横浜ビブレ アニメイト</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。おしゃれさん。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">乱数次男と同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-ramuda"><div class="photo"><span class="no">No. 007</span><div class="placeholder">飴村乱数<br>次男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乱数ぬい 次男</div><div class="character">飴村乱数</div><div class="facts"><b>シリーズ</b><span>アニメ版ちびぐるみ</span><b>お迎え日</b><span>2025.05.26</span><b>お迎え場所</b><span>横浜ビブレ アニメイト</span><b>性格</b><span>甘いもの・かわいいもの・おしゃれが好き。楽しいことが大好き。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。明るくやわらかい。</span></div><div class="memo">帝統四男と同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-gentaro"><div class="photo"><span class="no">No. 008</span><div class="placeholder">夢野幻太郎<br>長男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">幻太郎ぬい 長男</div><div class="character">夢野幻太郎</div><div class="facts"><b>シリーズ</b><span>アニメ版ちびぐるみ</span><b>お迎え日</b><span>2025.05.27</span><b>お迎え場所</b><span>横浜ビブレ アニメイト</span><b>性格</b><span>嘘つきで、本とスイカが好き。ちょっとひねくれている。人を揶揄うのが好き。</span><b>話し方</b><span>ひらがな多めで語尾に「ぬ」。少し澄ました丁寧な喋り方で、理屈っぽい。</span></div><div class="memo">アニメ版ちびぐるみのポッセが揃った日。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-chuohku"><div class="photo"><span class="no">No. 009</span><div class="placeholder">勘解由小路無花果<br>無花果さま<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">無花果さま</div><div class="character">勘解由小路無花果</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2025.09.03</span><b>お迎え場所</b><span>池袋 namco</span><b>性格</b><span>かわいいものが好き。ちょっと厳しい。</span><b>話し方</b><span>凛々しく強気な喋り方で、語尾に「ぬ」。</span></div><div class="memo">合歓ちゃんと同日お迎え。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-chuohku"><div class="photo"><span class="no">No. 010</span><div class="placeholder">碧棺合歓<br>合歓ちゃん<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">合歓ちゃん</div><div class="character">碧棺合歓</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2025.09.03</span><b>お迎え場所</b><span>池袋 namco</span><b>性格</b><span>お菓子作りが好き。いつも楽しそう。</span><b>話し方</b><span>一人称は「わたし」。明るく元気な敬語で、語尾に「ぬ」。</span></div><div class="memo">無花果さまと同日お迎え。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 011</span><div class="placeholder">有栖川帝統<br>五男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 五男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>もちころりん</span><b>お迎え日</b><span>2025.09.17</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。お昼寝好き。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">もちころりん3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-ramuda"><div class="photo"><span class="no">No. 012</span><div class="placeholder">飴村乱数<br>三男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乱数ぬい 三男</div><div class="character">飴村乱数</div><div class="facts"><b>シリーズ</b><span>もちころりん</span><b>お迎え日</b><span>2025.09.17</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>甘いもの・かわいいもの・おしゃれが好き。ゴロゴロするのが好き。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。明るくやわらかい。</span></div><div class="memo">もちころりん3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-gentaro"><div class="photo"><span class="no">No. 013</span><div class="placeholder">夢野幻太郎<br>次男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">幻太郎ぬい 次男</div><div class="character">夢野幻太郎</div><div class="facts"><b>シリーズ</b><span>もちころりん</span><b>お迎え日</b><span>2025.09.17</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>嘘つきで、本とスイカが好き。ちょっとひねくれている。ちょっと怠けもの。</span><b>話し方</b><span>ひらがな多めで語尾に「ぬ」。少し澄ました丁寧な喋り方で、理屈っぽい。</span></div><div class="memo">もちころりん3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 014</span><div class="placeholder">有栖川帝統<br>六男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 六男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>ぺたりんず</span><b>お迎え日</b><span>2025.09.24</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。運動神経がいい。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span><b>特徴</b><span>手に磁石あり。みんなでまとまって写真を撮るのが得意。</span></div><div class="memo">ぺたりんず3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-ramuda"><div class="photo"><span class="no">No. 015</span><div class="placeholder">飴村乱数<br>四男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乱数ぬい 四男</div><div class="character">飴村乱数</div><div class="facts"><b>シリーズ</b><span>ぺたりんず</span><b>お迎え日</b><span>2025.09.24</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>甘いもの・かわいいもの・おしゃれが好き。なんかアクティブ。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。明るくやわらかい。</span></div><div class="memo">ぺたりんず3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-gentaro"><div class="photo"><span class="no">No. 016</span><div class="placeholder">夢野幻太郎<br>三男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">幻太郎ぬい 三男</div><div class="character">夢野幻太郎</div><div class="facts"><b>シリーズ</b><span>ぺたりんず</span><b>お迎え日</b><span>2025.09.24</span><b>お迎え場所</b><span>有楽町マルイ POP UP</span><b>性格</b><span>嘘つきで、本とスイカが好き。ちょっとひねくれている。ちょっと腹黒。</span><b>話し方</b><span>ひらがな多めで語尾に「ぬ」。少し澄ました丁寧な喋り方で、理屈っぽい。</span></div><div class="memo">ぺたりんず3人を同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-gentaro"><div class="photo"><span class="no">No. 017</span><div class="placeholder">夢野幻太郎<br>四男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">幻太郎ぬい 四男</div><div class="character">夢野幻太郎</div><div class="facts"><b>シリーズ</b><span>ピコぬい</span><b>お迎え日</b><span>2026.01.09</span><b>お迎え場所</b><span>メルカリ</span><b>性格</b><span>嘘つきで、本とスイカが好き。ちょっとひねくれている。不思議ちゃん。</span><b>話し方</b><span>ひらがな多めで語尾に「ぬ」。少し澄ました丁寧な喋り方で、理屈っぽい。</span></div><div class="memo">メルカリで注文した日を誕生日として記録。到着日は未確認。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-dice"><div class="photo"><span class="no">No. 018</span><div class="placeholder">有栖川帝統<br>七男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">帝統ぬい 七男</div><div class="character">有栖川帝統</div><div class="facts"><b>シリーズ</b><span>アクぬい</span><b>お迎え日</b><span>2026.07.25</span><b>お迎え場所</b><span>横浜ビブレ namco</span><b>性格</b><span>ギャンブル好き・食いしん坊・甘えん坊。あわてんぼう。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。元気で勢いがある。</span></div><div class="memo">2026/10/1、CONNECT STANDでラボットちゃん観察後、ぴあアリーナMMでヒプカリステ初ライブ。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-ramuda"><div class="photo"><span class="no">No. 019</span><div class="placeholder">飴村乱数<br>五男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">乱数ぬい 五男</div><div class="character">飴村乱数</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2026.08.21</span><b>お迎え場所</b><span>横浜ビブレ アニメイト</span><b>性格</b><span>甘いもの・かわいいもの・おしゃれが好き。小悪魔。</span><b>話し方</b><span>ひらがな多めの幼い喋り方で、語尾に「ぬ」。明るくやわらかい。</span></div><div class="memo">幻太郎五男と同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article><article class="card cat-gentaro"><div class="photo"><span class="no">No. 020</span><div class="placeholder">夢野幻太郎<br>五男<br><small>PHOTO COMING SOON</small></div></div><div class="body"><div class="name">幻太郎ぬい 五男</div><div class="character">夢野幻太郎</div><div class="facts"><b>シリーズ</b><span>ちびぐるみ</span><b>お迎え日</b><span>2026.08.21</span><b>お迎え場所</b><span>横浜ビブレ アニメイト</span><b>性格</b><span>嘘つきで、本とスイカが好き。ちょっとひねくれている。ぼーっとしている。</span><b>話し方</b><span>ひらがな多めで語尾に「ぬ」。少し澄ました丁寧な喋り方で、理屈っぽい。</span></div><div class="memo">乱数五男と同日お迎え。同日内の順序は仮登録。</div><label class="photoBtn">写真を入れる<input type="file" accept="image/*"></label></div></article></div>
+<div class="tiny">写真は端末内保存なので、SafariのWebサイトデータを消す前や機種変更前には「写真データをバックアップ」を使ってください。</div>
+</div>
+<script>
+(function(){
+  "use strict";
+  var KEY="nut-zukan-photo-only-v3";
+  var cards=[].slice.call(document.querySelectorAll("#grid .card"));
+  function safeGet(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")||{}}catch(e){return {}}}
+  function safeSet(obj){try{localStorage.setItem(KEY,JSON.stringify(obj));return true}catch(e){return false}}
+  var photos=safeGet();
+  function photoBox(card){return card.querySelector(".photo")}
+  function setPhoto(card,index,src){
+    var box=photoBox(card), old=box.querySelector("img");
+    if(old) old.remove();
+    if(src){
+      var img=document.createElement("img"); img.src=src; img.alt=card.querySelector(".name").textContent;
+      var ph=box.querySelector(".placeholder"); if(ph) ph.style.display="none";
+      box.appendChild(img); card.classList.add("has-photo");
+      var label=card.querySelector(".photoBtn"); if(label) label.childNodes[0].nodeValue="写真を変更する";
+    }else card.classList.remove("has-photo");
+  }
+  function updateCount(){
+    var n=cards.filter(function(c){return c.classList.contains("has-photo")}).length;
+    var el=document.getElementById("photoCountStatic"); if(el) el.textContent="写真 "+n+" / "+cards.length;
+  }
+  cards.forEach(function(card,i){
+    var src=photos[String(i+1)]; if(src)setPhoto(card,i,src);
+    var input=card.querySelector('.photoBtn input[type="file"]');
+    if(!input)return;
+    input.removeAttribute("onchange");
+    input.addEventListener("change",function(){
+      var f=input.files&&input.files[0]; if(!f)return;
+      var r=new FileReader();
+      r.onload=function(){
+        var img=new Image();
+        img.onload=function(){
+          var max=900,scale=Math.min(1,max/Math.max(img.width,img.height));
+          var c=document.createElement("canvas"); c.width=Math.round(img.width*scale); c.height=Math.round(img.height*scale);
+          c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+          var src=c.toDataURL("image/jpeg",.8); photos[String(i+1)]=src; safeSet(photos); setPhoto(card,i,src); updateCount();
+        }; img.src=r.result;
+      }; r.readAsDataURL(f);
+    });
+  });
+  updateCount();
+  var ex=document.getElementById("exportBtn");
+  if(ex)ex.addEventListener("click",function(){
+    try{
+      var blob=new Blob([JSON.stringify({version:3,photos:photos},null,2)],{type:"application/json"});
+      var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="nut-zukan-photo-backup.json"; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){URL.revokeObjectURL(a.href)},500);
+    }catch(e){alert("この開き方ではバックアップを書き出せないみたい。GitHub Pages版をSafariで開いて試してね！")}
+  });
+  var imp=document.getElementById("importFile");
+  if(imp)imp.addEventListener("change",function(){
+    var f=imp.files&&imp.files[0]; if(!f)return; var r=new FileReader();
+    r.onload=function(){try{var j=JSON.parse(r.result),p=j.photos||{}; photos=p; safeSet(photos); cards.forEach(function(c,i){setPhoto(c,i,photos[String(i+1)]||"")}); updateCount(); alert("写真データを復元したぞ！")}catch(e){alert("このバックアップは読み込めなかった！")}}; r.readAsText(f);
+  });
+})();
+</script></body></html>
